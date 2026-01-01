@@ -22,7 +22,7 @@
      <p class="text-indigo-600">Quản lý và tính toán lãi lỗ hàng ngày</p>
     </div><!-- Form nhập liệu -->
     <div class="bg-white rounded-2xl shadow-xl p-6 mb-6">
-     <h2 class="text-2xl font-bold text-gray-800 mb-6">📊 Nhập Dữ Liệu Hôm Nay</h2>
+     <h2 class="text-2xl font-bold text-gray-800 mb-6">����� Nhập Dữ Liệu Hôm Nay</h2>
      <form id="dataForm" class="space-y-6"><!-- Ngày -->
       <div><label for="date" class="block text-sm font-semibold text-gray-700 mb-2">📅 Ngày</label> <input type="date" id="date" required class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
       </div><!-- Tồn hôm qua -->
@@ -118,7 +118,7 @@
     <div class="bg-white rounded-2xl shadow-xl p-6">
      <h2 class="text-2xl font-bold text-gray-800 mb-6">📋 Lịch Sử Giao Dịch</h2>
      <div id="recordsList" class="space-y-4">
-      <p class="text-gray-500 text-center py-8">Chưa có giao dịch nào. Hãy nhập dữ liệu đầu tiên!</p>
+      <p class="text-gray-500 text-center py-8">Chưa có giao dịch nào. Hãy nhập d�� liệu đầu tiên!</p>
      </div>
     </div>
    </div>
@@ -300,64 +300,52 @@
       
       container.innerHTML = sortedRecords.map(record => {
         const giaTriTonKho = record.con_lai_kg * record.gia_von_binh_quan;
+        const tongKgCoSan = record.ton_kg + record.nhap_kg;
         return `
-        <div class="border-2 border-gray-200 rounded-lg p-4 hover:shadow-lg transition">
-          <div class="flex justify-between items-start mb-4">
-            <div>
-              <h3 class="font-bold text-lg text-gray-800">📅 ${new Date(record.date).toLocaleDateString('vi-VN')}</h3>
-              <p class="text-sm text-gray-500">ID: ${record.id}</p>
-            </div>
+        <div class="border-2 border-gray-200 rounded-lg p-5 hover:shadow-lg transition bg-gradient-to-br from-white to-gray-50">
+          <div class="flex justify-between items-center mb-4 pb-3 border-b-2 border-gray-200">
+            <h3 class="font-bold text-xl text-gray-800">📅 ${new Date(record.date).toLocaleDateString('vi-VN')}</h3>
             <button onclick="deleteRecord('${record.__backendId}')" 
-              class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-semibold transition">
+              class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-semibold transition text-sm">
               🗑️ Xóa
             </button>
           </div>
           
-          <div class="bg-purple-50 p-3 rounded-lg mb-4">
-            <p class="text-xs text-gray-600 mb-2">💼 Thông tin vốn</p>
-            <div class="grid grid-cols-2 gap-2">
-              <div>
-                <p class="text-xs text-gray-600">Tổng có sẵn</p>
-                <p class="font-bold text-purple-900">${(record.ton_kg + record.nhap_kg).toFixed(2)} kg</p>
-              </div>
-              <div>
-                <p class="text-xs text-gray-600">Giá vốn BQ</p>
-                <p class="font-bold text-purple-900">${formatMoney(record.gia_von_binh_quan)}/kg</p>
-              </div>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+            <div class="bg-yellow-50 p-3 rounded-lg border border-yellow-200 text-center">
+              <p class="text-xs text-yellow-700 mb-1">📦 Tồn</p>
+              <p class="font-bold text-yellow-900">${record.ton_kg.toFixed(1)} kg</p>
+              <p class="text-xs text-yellow-700">${formatMoney(record.ton_tien)}</p>
+            </div>
+            <div class="bg-green-50 p-3 rounded-lg border border-green-200 text-center">
+              <p class="text-xs text-green-700 mb-1">📥 Nhập</p>
+              <p class="font-bold text-green-900">${record.nhap_kg.toFixed(1)} kg</p>
+              <p class="text-xs text-green-700">${formatMoney(record.nhap_tien)}</p>
+            </div>
+            <div class="bg-blue-50 p-3 rounded-lg border border-blue-200 text-center">
+              <p class="text-xs text-blue-700 mb-1">💰 Bán</p>
+              <p class="font-bold text-blue-900">${record.ban_kg.toFixed(1)} kg</p>
+              <p class="text-xs text-blue-700">${formatMoney(record.ban_tien)}</p>
+            </div>
+            <div class="bg-purple-50 p-3 rounded-lg border border-purple-200 text-center">
+              <p class="text-xs text-purple-700 mb-1">📊 Còn lại</p>
+              <p class="font-bold text-purple-900">${record.con_lai_kg.toFixed(1)} kg</p>
+              <p class="text-xs text-purple-700">${formatMoney(giaTriTonKho)}</p>
             </div>
           </div>
           
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            <div class="bg-yellow-50 p-3 rounded-lg">
-              <p class="text-xs text-gray-600 mb-1">Tồn hôm qua</p>
-              <p class="font-bold text-yellow-800">${record.ton_kg} kg × ${formatMoney(record.ton_gia)}</p>
-              <p class="text-sm font-semibold text-yellow-900">${formatMoney(record.ton_tien)}</p>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div class="bg-indigo-50 p-3 rounded-lg border border-indigo-200">
+              <p class="text-xs text-indigo-700 mb-1">💼 Giá vốn BQ</p>
+              <p class="font-bold text-indigo-900 text-lg">${formatMoney(record.gia_von_binh_quan)}/kg</p>
             </div>
-            <div class="bg-green-50 p-3 rounded-lg">
-              <p class="text-xs text-gray-600 mb-1">Nhập mới</p>
-              <p class="font-bold text-green-800">${record.nhap_kg} kg × ${formatMoney(record.nhap_gia)}</p>
-              <p class="text-sm font-semibold text-green-900">${formatMoney(record.nhap_tien)}</p>
+            <div class="bg-rose-50 p-3 rounded-lg border border-rose-200">
+              <p class="text-xs text-rose-700 mb-1">💸 Vốn đã bán</p>
+              <p class="font-bold text-rose-900 text-lg">${formatMoney(record.gia_von_da_ban)}</p>
             </div>
-            <div class="bg-blue-50 p-3 rounded-lg">
-              <p class="text-xs text-gray-600 mb-1">Bán ra</p>
-              <p class="font-bold text-blue-800">${record.ban_kg} kg × ${formatMoney(record.ban_gia)}</p>
-              <p class="text-sm font-semibold text-blue-900">${formatMoney(record.ban_tien)}</p>
-            </div>
-          </div>
-          
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="bg-rose-50 p-3 rounded-lg">
-              <p class="text-xs text-gray-600 mb-1">Giá vốn đã bán</p>
-              <p class="text-lg font-bold text-rose-900">${formatMoney(record.gia_von_da_ban)}</p>
-            </div>
-            <div class="bg-purple-50 p-3 rounded-lg">
-              <p class="text-xs text-gray-600 mb-1">Tồn còn lại</p>
-              <p class="text-lg font-bold text-purple-900">${record.con_lai_kg.toFixed(2)} kg</p>
-              <p class="text-xs text-purple-700">Giá trị: ${formatMoney(giaTriTonKho)}</p>
-            </div>
-            <div class="${record.lai_lo < 0 ? 'bg-red-50' : 'bg-green-50'} p-3 rounded-lg">
-              <p class="text-xs text-gray-600 mb-1">${record.lai_lo < 0 ? '❌ Lỗ' : '✅ Lãi'}</p>
-              <p class="text-lg font-bold ${record.lai_lo < 0 ? 'text-red-900' : 'text-green-900'}">${formatMoney(record.lai_lo)}</p>
+            <div class="${record.lai_lo < 0 ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'} p-3 rounded-lg border">
+              <p class="text-xs ${record.lai_lo < 0 ? 'text-red-700' : 'text-green-700'} mb-1">${record.lai_lo < 0 ? '❌ Lỗ' : '✅ Lãi'}</p>
+              <p class="font-bold ${record.lai_lo < 0 ? 'text-red-900' : 'text-green-900'} text-lg">${formatMoney(Math.abs(record.lai_lo))}</p>
             </div>
           </div>
         </div>
@@ -504,5 +492,6 @@
 
     init();
   </script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9b71fe6207e4c7ba',t:'MTc2NzI3MDI2Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9b7208fb47aac7ba',t:'MTc2NzI3MDcwMS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+ </body>
 </html>
