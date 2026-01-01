@@ -71,15 +71,47 @@
      </form>
     </div><!-- Kết quả tính toán -->
     <div id="resultSection" class="bg-white rounded-2xl shadow-xl p-6 mb-6 hidden">
-     <h2 class="text-2xl font-bold text-gray-800 mb-6">📈 Kết Quả</h2>
-     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+     <h2 class="text-2xl font-bold text-gray-800 mb-6">📈 Kết Quả Chi Tiết</h2><!-- Thông tin vốn -->
+     <div class="bg-gradient-to-r from-purple-50 to-indigo-50 p-6 rounded-lg border-2 border-purple-200 mb-6">
+      <h3 class="text-xl font-bold text-purple-900 mb-4">💼 Thông Tin Vốn</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+       <div>
+        <p class="text-sm text-gray-600 mb-1">Tổng số kg có sẵn</p>
+        <p id="tongKgCoSan" class="text-2xl font-bold text-purple-900">0 kg</p>
+       </div>
+       <div>
+        <p class="text-sm text-gray-600 mb-1">Giá vốn bình quân</p>
+        <p id="giaVonBinhQuan" class="text-2xl font-bold text-purple-900">0 VNĐ/kg</p>
+       </div>
+      </div>
+     </div><!-- Thống kê bán hàng -->
+     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+      <div class="bg-blue-50 p-6 rounded-lg border-2 border-blue-200">
+       <h3 class="text-lg font-bold text-blue-800 mb-2">📊 Số Lượng Đã Bán</h3>
+       <p id="resultBanKg" class="text-3xl font-bold text-blue-900">0 kg</p>
+      </div>
+      <div class="bg-cyan-50 p-6 rounded-lg border-2 border-cyan-200">
+       <h3 class="text-lg font-bold text-cyan-800 mb-2">💰 Doanh Thu</h3>
+       <p id="resultBanTien" class="text-3xl font-bold text-cyan-900">0 VNĐ</p>
+      </div>
+     </div><!-- Chi phí và tồn kho -->
+     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+      <div class="bg-rose-50 p-6 rounded-lg border-2 border-rose-200">
+       <h3 class="text-lg font-bold text-rose-800 mb-2">💸 Giá Vốn Đã Bán</h3>
+       <p id="giaVonDaBan" class="text-3xl font-bold text-rose-900">0 VNĐ</p>
+       <p class="text-sm text-rose-700 mt-2">(Số kg bán × Giá vốn bình quân)</p>
+      </div>
       <div class="bg-purple-50 p-6 rounded-lg border-2 border-purple-200">
        <h3 class="text-lg font-bold text-purple-800 mb-2">📦 Tồn Kho Còn Lại</h3>
        <p id="conLaiKg" class="text-3xl font-bold text-purple-900">0 kg</p>
+       <p id="giaTriTonKho" class="text-sm text-purple-700 mt-2">Giá trị: 0 VNĐ</p>
       </div>
+     </div><!-- Lãi lỗ -->
+     <div class="grid grid-cols-1 gap-6">
       <div id="laiLoCard" class="p-6 rounded-lg border-2">
        <h3 class="text-lg font-bold mb-2">💵 Lãi/Lỗ</h3>
-       <p id="laiLo" class="text-3xl font-bold">0 VNĐ</p>
+       <p id="laiLo" class="text-4xl font-bold mb-2">0 VNĐ</p>
+       <p class="text-sm opacity-75">(Doanh thu - Giá vốn đã bán)</p>
       </div>
      </div>
     </div><!-- Lịch sử -->
@@ -142,7 +174,13 @@
       e.preventDefault();
       
       if (recordCount >= 999) {
-        showResult('Đã đạt giới hạn 999 giao dịch. Vui lòng xóa bớt giao dịch cũ!', true);
+        const errorCard = document.getElementById('laiLoCard');
+        errorCard.className = 'p-6 rounded-lg border-2 bg-red-50 border-red-200';
+        errorCard.querySelector('h3').textContent = '⚠️ Thông báo';
+        errorCard.querySelector('h3').className = 'text-lg font-bold mb-2 text-red-800';
+        document.getElementById('laiLo').textContent = 'Đã đạt giới hạn 999 giao dịch';
+        document.getElementById('laiLo').className = 'text-2xl font-bold text-red-900';
+        document.getElementById('resultSection').classList.remove('hidden');
         return;
       }
 
@@ -161,7 +199,15 @@
       const nhapTien = nhapKg * nhapGia;
       const banTien = banKg * banGia;
       const conLaiKg = tonKg + nhapKg - banKg;
-      const laiLo = banTien - tonTien - nhapTien;
+      
+      // Tính giá vốn bình quân
+      const tongKg = tonKg + nhapKg;
+      const tongVon = tonTien + nhapTien;
+      const giaVonBinhQuan = tongKg > 0 ? tongVon / tongKg : 0;
+      
+      // Tính lãi/lỗ dựa trên giá vốn của số kg đã bán
+      const giaVonDaBan = banKg * giaVonBinhQuan;
+      const laiLo = banTien - giaVonDaBan;
 
       const record = {
         id: Date.now().toString(),
@@ -176,6 +222,8 @@
         ban_gia: banGia,
         ban_tien: banTien,
         con_lai_kg: conLaiKg,
+        gia_von_binh_quan: giaVonBinhQuan,
+        gia_von_da_ban: giaVonDaBan,
         lai_lo: laiLo,
         created_at: new Date().toISOString()
       };
@@ -186,25 +234,40 @@
       submitBtn.innerHTML = `<span id="submitBtnText">${window.elementSdk?.config?.submit_button_text || defaultConfig.submit_button_text}</span>`;
 
       if (result.isOk) {
-        showResult(conLaiKg, laiLo);
+        showResult({ 
+          tongKg, 
+          giaVonBinhQuan, 
+          conLaiKg, 
+          laiLo, 
+          banKg, 
+          banTien, 
+          giaVonDaBan 
+        });
         document.getElementById('dataForm').reset();
         document.getElementById('date').valueAsDate = new Date();
         updateCalculations();
       } else {
-        showResult('Lỗi khi lưu dữ liệu. Vui lòng thử lại!', true);
+        const errorCard = document.getElementById('laiLoCard');
+        errorCard.className = 'p-6 rounded-lg border-2 bg-red-50 border-red-200';
+        document.getElementById('laiLo').textContent = 'Lỗi khi lưu dữ liệu';
+        document.getElementById('resultSection').classList.remove('hidden');
       }
     });
 
-    function showResult(conLaiKg, laiLo) {
+    function showResult(data) {
       const resultSection = document.getElementById('resultSection');
       resultSection.classList.remove('hidden');
       
-      if (typeof conLaiKg === 'string') {
-        document.getElementById('conLaiKg').textContent = conLaiKg;
-        return;
-      }
+      const { tongKg, giaVonBinhQuan, conLaiKg, laiLo, banKg, banTien, giaVonDaBan } = data;
+      const giaTriTonKho = conLaiKg * giaVonBinhQuan;
 
+      document.getElementById('tongKgCoSan').textContent = tongKg.toFixed(2) + ' kg';
+      document.getElementById('giaVonBinhQuan').textContent = formatMoney(giaVonBinhQuan) + '/kg';
+      document.getElementById('resultBanKg').textContent = banKg.toFixed(2) + ' kg';
+      document.getElementById('resultBanTien').textContent = formatMoney(banTien);
+      document.getElementById('giaVonDaBan').textContent = formatMoney(giaVonDaBan);
       document.getElementById('conLaiKg').textContent = conLaiKg.toFixed(2) + ' kg';
+      document.getElementById('giaTriTonKho').textContent = 'Giá trị: ' + formatMoney(giaTriTonKho);
       document.getElementById('laiLo').textContent = formatMoney(laiLo);
       
       const laiLoCard = document.getElementById('laiLoCard');
@@ -212,12 +275,12 @@
         laiLoCard.className = 'p-6 rounded-lg border-2 bg-red-50 border-red-200';
         laiLoCard.querySelector('h3').className = 'text-lg font-bold mb-2 text-red-800';
         laiLoCard.querySelector('h3').textContent = '❌ LỖ';
-        document.getElementById('laiLo').className = 'text-3xl font-bold text-red-900';
+        document.getElementById('laiLo').className = 'text-4xl font-bold mb-2 text-red-900';
       } else {
         laiLoCard.className = 'p-6 rounded-lg border-2 bg-green-50 border-green-200';
         laiLoCard.querySelector('h3').className = 'text-lg font-bold mb-2 text-green-800';
         laiLoCard.querySelector('h3').textContent = '✅ LÃI';
-        document.getElementById('laiLo').className = 'text-3xl font-bold text-green-900';
+        document.getElementById('laiLo').className = 'text-4xl font-bold mb-2 text-green-900';
       }
 
       setTimeout(() => {
@@ -235,7 +298,9 @@
 
       const sortedRecords = [...records].sort((a, b) => new Date(b.date) - new Date(a.date));
       
-      container.innerHTML = sortedRecords.map(record => `
+      container.innerHTML = sortedRecords.map(record => {
+        const giaTriTonKho = record.con_lai_kg * record.gia_von_binh_quan;
+        return `
         <div class="border-2 border-gray-200 rounded-lg p-4 hover:shadow-lg transition">
           <div class="flex justify-between items-start mb-4">
             <div>
@@ -246,6 +311,20 @@
               class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-semibold transition">
               🗑️ Xóa
             </button>
+          </div>
+          
+          <div class="bg-purple-50 p-3 rounded-lg mb-4">
+            <p class="text-xs text-gray-600 mb-2">💼 Thông tin vốn</p>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <p class="text-xs text-gray-600">Tổng có sẵn</p>
+                <p class="font-bold text-purple-900">${(record.ton_kg + record.nhap_kg).toFixed(2)} kg</p>
+              </div>
+              <div>
+                <p class="text-xs text-gray-600">Giá vốn BQ</p>
+                <p class="font-bold text-purple-900">${formatMoney(record.gia_von_binh_quan)}/kg</p>
+              </div>
+            </div>
           </div>
           
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
@@ -266,18 +345,23 @@
             </div>
           </div>
           
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-rose-50 p-3 rounded-lg">
+              <p class="text-xs text-gray-600 mb-1">Giá vốn đã bán</p>
+              <p class="text-lg font-bold text-rose-900">${formatMoney(record.gia_von_da_ban)}</p>
+            </div>
             <div class="bg-purple-50 p-3 rounded-lg">
               <p class="text-xs text-gray-600 mb-1">Tồn còn lại</p>
-              <p class="text-xl font-bold text-purple-900">${record.con_lai_kg.toFixed(2)} kg</p>
+              <p class="text-lg font-bold text-purple-900">${record.con_lai_kg.toFixed(2)} kg</p>
+              <p class="text-xs text-purple-700">Giá trị: ${formatMoney(giaTriTonKho)}</p>
             </div>
             <div class="${record.lai_lo < 0 ? 'bg-red-50' : 'bg-green-50'} p-3 rounded-lg">
               <p class="text-xs text-gray-600 mb-1">${record.lai_lo < 0 ? '❌ Lỗ' : '✅ Lãi'}</p>
-              <p class="text-xl font-bold ${record.lai_lo < 0 ? 'text-red-900' : 'text-green-900'}">${formatMoney(record.lai_lo)}</p>
+              <p class="text-lg font-bold ${record.lai_lo < 0 ? 'text-red-900' : 'text-green-900'}">${formatMoney(record.lai_lo)}</p>
             </div>
           </div>
         </div>
-      `).join('');
+      `}).join('');
     }
 
     async function deleteRecord(backendId) {
@@ -321,7 +405,9 @@
       const baseSize = config.font_size || defaultConfig.font_size;
       
       appTitle.textContent = config.app_title || defaultConfig.app_title;
-      submitBtnText.textContent = config.submit_button_text || defaultConfig.submit_button_text;
+      if (submitBtnText) {
+        submitBtnText.textContent = config.submit_button_text || defaultConfig.submit_button_text;
+      }
       
       appTitle.style.fontFamily = `${customFont}, ${baseFontStack}`;
       appTitle.style.fontSize = `${baseSize * 2}px`;
@@ -418,5 +504,5 @@
 
     init();
   </script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9b71d8070017c7ba',t:'MTc2NzI2ODY5Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9b71fe6207e4c7ba',t:'MTc2NzI3MDI2Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
