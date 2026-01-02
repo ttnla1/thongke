@@ -1,60 +1,174 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>App tính toán</title>
-  <script src="https://unpkg.com/@supabase/supabase-js"></script>
+  <title>Thống Kê Thu Chi</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body>
 
-<button onclick="login()">Đăng nhập Google</button>
-<button onclick="logout()">Đăng xuất</button>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
 
-<br><br>
-<textarea id="data" placeholder="Nhập dữ liệu..."></textarea>
-<br>
-<button onclick="save()">Lưu</button>
-<button onclick="load()">Xem đã lưu chưa</button>
-<button onclick="clearData()">Xóa dữ liệu</button>
+<div class="max-w-5xl mx-auto p-6">
+
+  <!-- LOGIN -->
+  <div id="loginBox" class="text-center mt-20">
+    <h1 class="text-3xl font-bold mb-6">🔐 Đăng nhập để sử dụng</h1>
+    <button onclick="login()"
+      class="bg-red-500 text-white px-6 py-3 rounded-lg font-bold hover:bg-red-600">
+      Đăng nhập bằng Google
+    </button>
+  </div>
+
+  <!-- APP -->
+  <div id="app" class="hidden">
+
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-3xl font-bold text-indigo-900">📊 Thống Kê Thu Chi</h1>
+      <button onclick="logout()" class="text-sm text-red-600 font-bold">
+        Đăng xuất
+      </button>
+    </div>
+
+    <!-- FORM -->
+    <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+      <form id="dataForm" class="space-y-5">
+
+        <input type="date" id="date" class="w-full border p-2 rounded" required>
+
+        <div class="grid grid-cols-2 gap-3">
+          <input id="tonKg" type="number" placeholder="Tồn kg" class="border p-2 rounded">
+          <input id="tonGia" type="number" placeholder="Giá tồn" class="border p-2 rounded">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <input id="nhapKg" type="number" placeholder="Nhập kg" class="border p-2 rounded">
+          <input id="nhapGia" type="number" placeholder="Giá nhập" class="border p-2 rounded">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <input id="banKg" type="number" placeholder="Bán kg" class="border p-2 rounded">
+          <input id="banGia" type="number" placeholder="Giá bán" class="border p-2 rounded">
+        </div>
+
+        <button class="w-full bg-indigo-600 text-white py-3 rounded font-bold">
+          💾 Tính & Lưu
+        </button>
+      </form>
+    </div>
+
+    <!-- HISTORY -->
+    <div class="bg-white rounded-xl shadow-lg p-6">
+      <div class="flex justify-between mb-3">
+        <h2 class="font-bold">📋 Lịch sử</h2>
+        <button onclick="clearAll()" class="text-red-500 text-sm">Xóa tất cả</button>
+      </div>
+      <div id="history"></div>
+    </div>
+
+  </div>
+</div>
 
 <script>
-const supabase = supabaseJs.createClient(
-  "SUPABASE_URL",
-  "SUPABASE_ANON_KEY"
-)
+/* ================= SUPABASE ================= */
+const supabase = supabase.createClient(
+  "https://YOUR_PROJECT.supabase.co",
+  "YOUR_ANON_KEY"
+);
 
+let currentUser = null;
+
+/* ================= AUTH ================= */
 async function login() {
-  await supabase.auth.signInWithOAuth({ provider: 'google' })
+  await supabase.auth.signInWithOAuth({ provider: 'google' });
 }
 
 async function logout() {
-  await supabase.auth.signOut()
+  await supabase.auth.signOut();
+  location.reload();
 }
 
-async function save() {
-  const user = (await supabase.auth.getUser()).data.user
-  await supabase.from('records').insert({
-    user_id: user.id,
-    content: document.getElementById('data').value
-  })
-  alert("Đã lưu")
+supabase.auth.onAuthStateChange((_, session) => {
+  if (session) {
+    currentUser = session.user;
+    document.getElementById('loginBox').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+    initDB();
+  }
+});
+
+/* ================= DB (IndexedDB theo user) ================= */
+let db;
+let records = [];
+
+function initDB() {
+  const req = indexedDB.open("ThuChi_" + currentUser.id, 1);
+  req.onupgradeneeded = e => {
+    e.target.result.createObjectStore("data", { keyPath: "id" });
+  };
+  req.onsuccess = e => {
+    db = e.target.result;
+    loadData();
+  };
 }
 
-async function load() {
-  const user = (await supabase.auth.getUser()).data.user
-  const { data } = await supabase
-    .from('records')
-    .select('*')
-    .eq('user_id', user.id)
-
-  alert(data.length ? "Có dữ liệu đã lưu" : "Chưa có dữ liệu")
+function save(record) {
+  const tx = db.transaction("data", "readwrite");
+  tx.objectStore("data").put(record);
 }
 
-async function clearData() {
-  const user = (await supabase.auth.getUser()).data.user
-  await supabase.from('records').delete().eq('user_id', user.id)
-  alert("Đã xóa")
+function loadData() {
+  const tx = db.transaction("data", "readonly");
+  const req = tx.objectStore("data").getAll();
+  req.onsuccess = () => {
+    records = req.result;
+    render();
+  };
 }
+
+function clearAll() {
+  if (!confirm("Xóa toàn bộ dữ liệu?")) return;
+  const tx = db.transaction("data", "readwrite");
+  tx.objectStore("data").clear();
+  records = [];
+  render();
+}
+
+/* ================= LOGIC ================= */
+dataForm.onsubmit = e => {
+  e.preventDefault();
+
+  const banKg = +banKgEl.value || 0;
+  const banGia = +banGiaEl.value || 0;
+
+  const record = {
+    id: Date.now(),
+    date: date.value,
+    laiLo: banKg * banGia
+  };
+
+  records.push(record);
+  save(record);
+  render();
+};
+
+function render() {
+  history.innerHTML = records.map(r =>
+    `<div class="border p-2 mb-2">${r.date} — ${r.laiLo.toLocaleString()} ₫</div>`
+  ).join('');
+}
+
+const date = document.getElementById('date');
+const banKgEl = document.getElementById('banKg');
+const banGiaEl = document.getElementById('banGia');
+const history = document.getElementById('history');
+
+date.valueAsDate = new Date();
 </script>
 
 </body>
